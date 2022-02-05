@@ -6,11 +6,11 @@ This components uses ESP32's RMT peripheral as an UART port. It can send and rec
 
 ## Supported versions of frameworks and devices
 
-| Chip           | Framework          | Versions
-|----------------|--------------------|-----------------------
-| ESP32-S2 | ESP-IDF            | v4.3 and above
-| ESP32-C3 | ESP-IDF            | v4.3 and above
-| ESP32-S3 | ESP-IDF            | v4.3 and above
+| Chip           | Framework          | Versions   |   Number of UART    
+|----------------|--------------------|------------|----------
+| ESP32-S2 | ESP-IDF            | v4.3 and above  |   2
+| ESP32-C3 | ESP-IDF            | v4.3 and above  |   2
+| ESP32-S3 | ESP-IDF            | v4.3 and above  |   4
 
 ## How to Use
 Clone this repository to your project compoments directory.
