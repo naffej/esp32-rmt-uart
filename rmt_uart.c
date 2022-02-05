@@ -176,7 +176,7 @@ esp_err_t rmt_uart_write_bytes(rmt_uart_port_t uart_num, const uint8_t *src, siz
     for (int i = 0; i < size; ++i)
         printf("%d ", src[i]);
     printf("\n");
-    return rmt_write_items(ctx->rmt_config_tx.channel, ctx->items, rtc->item_index, true);
+    return rmt_write_items(ctx->rmt_config_tx.channel, ctx->rmt_uart_contex_tx.items, rtc->item_index, true);
 }
 
 int rmt_uart_read_bytes(rmt_uart_port_t uart_num, uint8_t *buf, size_t size, TickType_t ticks_to_wait)
