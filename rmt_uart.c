@@ -9,6 +9,7 @@
 static const char *TAG = "rmt-uart";
 
 typedef struct {
+    rmt_item32_t* items;
     int item_index;
 } rmt_uart_contex_tx_t;
 
@@ -21,7 +22,6 @@ typedef struct {
 } rmt_uart_contex_rx_t;
 
 typedef struct {
-    rmt_item32_t items[256];
     rmt_config_t rmt_config_tx;
     rmt_config_t rmt_config_rx;
     rmt_uart_config_t rmt_uart_config;
@@ -40,13 +40,13 @@ static int convert(rmt_uart_contex_t* ctx, uint8_t byte)
 
     for (int i = 0; i < 9; i += 2)
     {
-        rmt_item32_t* item = &ctx->items[rtc->item_index];
+        rmt_item32_t* item = &rtc->items[rtc->item_index];
         item->duration0 = ctx->rmt_bit_len;
         item->duration1 = ctx->rmt_bit_len;
         item->level0 = (data >> i) ^ 1;
         item->level1 = (data >> (i + 1)) ^ 1;
         rtc->item_index++;
-        if (rtc->item_index >= (sizeof(ctx->items) / sizeof(rmt_item32_t)))
+        if (rtc->item_index >= (ctx->rmt_uart_config.buffer_size / sizeof(rmt_item32_t)))
         {
             ESP_LOGE(TAG, "DATA TOO LONG");
             return -1;
@@ -141,7 +141,11 @@ esp_err_t rmt_uart_init(rmt_uart_port_t uart_num, const rmt_uart_config_t* uart_
         rmt_uart_contex[uart_num].rmt_config_rx = rmt_config_rx;
         rmt_get_ringbuf_handle(rmt_config_rx.channel, &rmt_uart_contex[uart_num].rmt_uart_contex_rx.rb);
         ESP_RETURN_ON_FALSE((rmt_uart_contex[uart_num].rmt_uart_contex_rx.rb), ESP_FAIL, TAG, "rmt ringbuffer is null");
-        // Start receive
+#if CONFIG_SPIRAM_USE_MALLOC
+        rmt_uart_contex[uart_num].rmt_uart_contex_tx.items = heap_caps_calloc(1, uart_config->buffer_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+#else
+        rmt_uart_contex[uart_num].rmt_uart_contex_tx.items = calloc(1, uart_config->buffer_size);
+#endif
         rmt_rx_start(rmt_uart_contex[uart_num].rmt_config_rx.channel, true);
     }
 
@@ -150,8 +154,6 @@ esp_err_t rmt_uart_init(rmt_uart_port_t uart_num, const rmt_uart_config_t* uart_
         rmt_config_t rmt_config_tx = RMT_DEFAULT_CONFIG_TX(uart_config->tx_io_num, uart_num + 1);
         rmt_config_tx.tx_config.carrier_en = false;
         rmt_config_tx.clk_div = RMT_DIV;
-    //    rmt_config_tx.tx_config.idle_level = RMT_IDLE_LEVEL_HIGH;
-    //    rmt_config_tx.tx_config.idle_output_en = true;
         rmt_config_tx.flags = RMT_CHANNEL_FLAGS_INVERT_SIG;
         ESP_ERROR_CHECK(rmt_config(&rmt_config_tx));
         ESP_ERROR_CHECK(rmt_driver_install(rmt_config_tx.channel, uart_config->buffer_size, 0));
