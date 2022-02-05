@@ -16,4 +16,4 @@ This components uses ESP32's RMT peripheral as an UART port. It can send and rec
 Clone this repository to your project compoments directory.
 
 ## Restrictions
-In ESP32-S2 this driver can only receive 12 bytes at once. In RX only mode this limit is 24 bytes. Transmit has no restriction.
+Due to hardware limitations ESP32-S2 can only receive 12 bytes at once. In RX only mode this limit is 24 bytes. Transmit has no restriction.
