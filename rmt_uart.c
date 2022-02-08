@@ -172,10 +172,10 @@ esp_err_t rmt_uart_write_bytes(rmt_uart_port_t uart_num, const uint8_t* data, si
     ESP_RETURN_ON_FALSE((ctx->rmt_uart_config.mode != RMT_UART_MODE_RX_ONLY), ESP_FAIL, TAG, "uart RX only");
     rmt_uart_contex_tx_t* rtc = &ctx->rmt_uart_contex_tx;
     if (convert_data_to_items(ctx, data, size) < 0) return ESP_FAIL;
-    printf("rmt tx ");
-    for (int i = 0; i < size; ++i)
-        printf("%d ", data[i]);
-    printf("\n");
+    // printf("rmt tx ");
+    // for (int i = 0; i < size; ++i)
+    //     printf("%d ", data[i]);
+    // printf("\n");
     return rmt_write_items(ctx->rmt_config_tx.channel, ctx->rmt_uart_contex_tx.items, rtc->item_index, true);
 }
 
@@ -202,10 +202,10 @@ int rmt_uart_read_bytes(rmt_uart_port_t uart_num, uint8_t* buf, size_t size, Tic
         vRingbufferReturnItem(rrc->rb, (void*)items);
 
         ESP_LOGD(TAG, "\trx is complete byte_num=%d", rrc->byte_num);
-        printf("rmt rx ");
-        for (int i = 0; i < rrc->byte_num; ++i)
-            printf("%d ", rrc->bytes[i]);
-        printf("\n\n");
+        // printf("rmt rx ");
+        // for (int i = 0; i < rrc->byte_num; ++i)
+        //     printf("%d ", rrc->bytes[i]);
+        // printf("\n\n");
     }
     return rrc->byte_num;
 }
