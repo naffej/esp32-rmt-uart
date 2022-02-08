@@ -33,7 +33,7 @@ typedef struct {
 
 static rmt_uart_contex_t rmt_uart_contex[RMT_UART_NUM_MAX] = {0};
 
-static int convert(rmt_uart_contex_t* ctx, uint8_t byte)
+static int convert_byte_to_items(rmt_uart_contex_t* ctx, uint8_t byte)
 {
     rmt_uart_contex_tx_t* rtc = &ctx->rmt_uart_contex_tx;
     uint16_t data = (byte << 1) | (1 << 9);
@@ -56,14 +56,14 @@ static int convert(rmt_uart_contex_t* ctx, uint8_t byte)
     return 0;
 }
 
-static int convert_bytes(rmt_uart_contex_t* ctx, const uint8_t* data, uint16_t len)
+static int convert_data_to_items(rmt_uart_contex_t* ctx, const uint8_t* data, uint16_t len)
 {
     rmt_uart_contex_tx_t* rtc = &ctx->rmt_uart_contex_tx;
     rtc->item_index = 0;
     
     for (int i = 0; i < len; ++i)
     {
-        if (convert(ctx, data[i])) return -1;
+        if (convert_byte_to_items(ctx, data[i])) return -1;
     }
     return rtc->item_index;
 }
@@ -165,21 +165,21 @@ esp_err_t rmt_uart_init(rmt_uart_port_t uart_num, const rmt_uart_config_t* uart_
     return ESP_OK;
 }
 
-esp_err_t rmt_uart_write_bytes(rmt_uart_port_t uart_num, const uint8_t *src, size_t size)
+esp_err_t rmt_uart_write_bytes(rmt_uart_port_t uart_num, const uint8_t* data, size_t size)
 {
     rmt_uart_contex_t* ctx = &rmt_uart_contex[uart_num];
     ESP_RETURN_ON_FALSE((ctx->configured), ESP_FAIL, TAG, "uart not configured");
     ESP_RETURN_ON_FALSE((ctx->rmt_uart_config.mode != RMT_UART_MODE_RX_ONLY), ESP_FAIL, TAG, "uart RX only");
     rmt_uart_contex_tx_t* rtc = &ctx->rmt_uart_contex_tx;
-    if (convert_bytes(ctx, src, size) < 0) return ESP_FAIL;
+    if (convert_data_to_items(ctx, data, size) < 0) return ESP_FAIL;
     printf("rmt tx ");
     for (int i = 0; i < size; ++i)
-        printf("%d ", src[i]);
+        printf("%d ", data[i]);
     printf("\n");
     return rmt_write_items(ctx->rmt_config_tx.channel, ctx->rmt_uart_contex_tx.items, rtc->item_index, true);
 }
 
-int rmt_uart_read_bytes(rmt_uart_port_t uart_num, uint8_t *buf, size_t size, TickType_t ticks_to_wait)
+int rmt_uart_read_bytes(rmt_uart_port_t uart_num, uint8_t* buf, size_t size, TickType_t ticks_to_wait)
 {
     rmt_uart_contex_t* ctx = &rmt_uart_contex[uart_num];
     ESP_RETURN_ON_FALSE((ctx->configured), ESP_FAIL, TAG, "uart not configured");
@@ -208,4 +208,32 @@ int rmt_uart_read_bytes(rmt_uart_port_t uart_num, uint8_t *buf, size_t size, Tic
         printf("\n\n");
     }
     return rrc->byte_num;
+}
+
+esp_err_t rmt_uart_deinit(rmt_uart_port_t uart_num)
+{
+    rmt_uart_contex_t* ctx = &rmt_uart_contex[uart_num];
+    ESP_RETURN_ON_FALSE((ctx->configured), ESP_FAIL, TAG, "uart not configured");
+    esp_err_t ret = ESP_OK;
+
+    if (ctx->rmt_uart_config.mode != RMT_UART_MODE_RX_ONLY)
+    {
+        rmt_uart_contex_tx_t* rtc = &ctx->rmt_uart_contex_tx;
+#if CONFIG_SPIRAM_USE_MALLOC
+        heap_caps_free(rtc->items);
+#else
+        free(rtc->items);
+#endif
+        ret = rmt_driver_uninstall(uart_num + 1);
+        if (ret != ESP_OK) return ret;
+    }
+
+    if (ctx->rmt_uart_config.mode != RMT_UART_MODE_TX_ONLY)
+    {
+        ret = rmt_driver_uninstall(uart_num);
+        if (ret != ESP_OK) return ret;
+    }
+
+    ctx->configured = false;
+    return ret;
 }

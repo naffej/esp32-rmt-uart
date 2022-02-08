@@ -56,8 +56,10 @@ typedef struct {
 } rmt_uart_config_t;
 
 esp_err_t rmt_uart_init(rmt_uart_port_t uart_num, const rmt_uart_config_t* uart_config);
-esp_err_t rmt_uart_write_bytes(rmt_uart_port_t uart_num, const uint8_t *src, size_t size);
-esp_err_t rmt_uart_read_bytes(rmt_uart_port_t uart_num, uint8_t *buf, size_t size, TickType_t ticks_to_wait);
+esp_err_t rmt_uart_write_bytes(rmt_uart_port_t uart_num, const uint8_t* data, size_t size);
+esp_err_t rmt_uart_read_bytes(rmt_uart_port_t uart_num, uint8_t* buf, size_t size, TickType_t ticks_to_wait);
+esp_err_t rmt_uart_deinit(rmt_uart_port_t uart_num);
+
 
 #ifdef __cplusplus
 }
